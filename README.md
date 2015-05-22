@@ -8,6 +8,7 @@ J. Engel, B. Bloemen, L.P. van dan Heuvel, U.H.F. Engelke, R.A. Wevers, and L.M.
 # Availability and Requirements
 ##### Programming languages (given versions were used for development, other versions may also be compatible):
 * Matlab (R2014b)
+* Statistics toolbox (?)
 
 ##### Other requirements
 * [Linstats 2006b] (http://www.mathworks.com/matlabcentral/fileexchange/13493-linstats-2006b)
