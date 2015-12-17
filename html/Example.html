@@ -1,0 +1,344 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>Example script for rMANOVA analysis</title><meta name="generator" content="MATLAB 8.4"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2015-12-17"><meta name="DC.source" content="Example.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h1>Example script for rMANOVA analysis</h1><!--introduction--><p>This example shows how to fit an rMANOVA model, run a permutation test and construct relevant plots.</p><p>The main idea of rMANOVA is to replace the sample estimate of the within-group covariance matrix by a shrunken version. Different prior structures for the covariance matrix can be specified, namely: 1. Average variance 2. Unique variance</p><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#1">Specify data</a></li><li><a href="#2">Calculate model</a></li><li><a href="#6">Extra info:  The stats structure contains the output of the model</a></li><li><a href="#7">Significance testing via permutation testing</a></li><li><a href="#10">Plot results.</a></li></ul></div><h2>Specify data<a name="1"></a></h2><pre class="codeinput">mu1 = zeros(5,1);
+mu2 = zeros(5,1); mu2(2) = 2; mu2(3) = 10;
+Sigma = eye(5); Sigma(3,3) = 200;
+Sigma(1,2) = 0.9; Sigma(2,1) = Sigma(1,2);
+X1 = mvnrnd(mu1,Sigma,500); X2 = mvnrnd(mu2,Sigma,500);
+X = [X1;X2];
+Label = ones(1000,1); Label(501:end) = 2;
+variable_names = [<span class="string">'X1'</span>;<span class="string">'X2'</span>;<span class="string">'X3'</span>;<span class="string">'X4'</span>;<span class="string">'X5'</span>];
+[h,ax,bigax] = gplotmatrix(X,[],Label,<span class="string">'br'</span>,<span class="string">'o*'</span>,5,<span class="string">'off'</span>,<span class="string">'variable'</span>,variable_names,variable_names);
+set(ax,<span class="string">'FontSize'</span>,20');
+</pre><img vspace="5" hspace="5" src="Example_01.png" alt=""> <h2>Calculate model<a name="2"></a></h2><p>1. Add linstats_2006 folder to path</p><pre class="codeinput">work_dir = pwd;
+linstats_path = [work_dir,filesep,<span class="string">'linstats_2006'</span>];
+addpath(linstats_path);
+<span class="comment">%</span>
+</pre><p>2. Load default rMANOVA options</p><pre class="codeinput">options = rmanova(<span class="string">'options'</span>);
+<span class="comment">% Note that options.lambda = empty. This  means that the algorithm itself determines the best amount of</span>
+<span class="comment">% shrinkage of the form (lambda*T+(1-lambda)Sigma_w), where T is a prior</span>
+<span class="comment">% covariance structure. Note that the MANOVA model is obtained when lambda</span>
+<span class="comment">% = 0 (only when the number of samples is smaller than the number of</span>
+<span class="comment">% variables). The ASCA model is obtained when lambda = 1.</span>
+<span class="comment">%</span>
+</pre><pre class="codeinput">options.target = <span class="string">'unique_var'</span>; <span class="comment">% Options are 'average_var', 'unique_var'</span>
+<span class="comment">% Specify shrinkage target. Use one of the two options listed above.</span>
+<span class="comment">%</span>
+<span class="comment">% The options structure also allows to specify the type of SSQ correction</span>
+<span class="comment">% that is used for analysis of unbalanced data (options.sstype). Type III</span>
+<span class="comment">% corrections is the default. A specific model that only tests certain main</span>
+<span class="comment">% effects and interactions can also be specified in options. (See</span>
+<span class="comment">% linstats_2006b toolbox manual for more information.)</span>
+<span class="comment">%</span>
+</pre><p>3. fit model</p><pre class="codeinput">stats = rmanova(X,options,Label); <span class="comment">% Same result as manova1 when lambda = 0;</span>
+<span class="comment">%</span>
+<span class="comment">% If you want to study the effect of more factors just insert the label</span>
+<span class="comment">% vectors consequtively, i.e.</span>
+<span class="comment">% rmanova(X,options,[],Factor1_label,Factor2_label).</span>
+</pre><h2>Extra info:  The stats structure contains the output of the model<a name="6"></a></h2><p>MODEL INFO stats.info can be inspected to lookup the factor names, the levels for each factor, and the actual model that was fit (equation 2 in paper). Stats.labels contains the columns from the designmatrix corresponding to each term in the model description (note that the intercept is ignored).</p><p>DATA stats.data contains the raw data, the fit by equation 2, and the residuals. Note the fit given by each term of the model (main effect or interaction) is saved seperately. For example stats.data.fit(:,:,1) contains the estimated mean responses due to the first main effect.</p><p>stats.dmat contains the designmatrix</p><p>% stats.shrink contains information of the shrinkage estimate of the within-group sums-of-squares matrix. Note that in this example stats.lambda is close to zero indicating that not much shrinkage was applied. This is expected due to the large number (1000) of training samples in the simulated data set.</p><p>stats.tests contains the output of four statistical tests, namely Wilks lambda, Pillais trace, Hotelling-Lawley Trace, and Roy's Max Root. The rows in stats.test correspond to these four test and each column corresponds to a term in the model (main effect or interaction).</p><p>THE FOLLOWING OUTPUT IS ONLY STORED WHEN OPTIONS.EXTRA = 1</p><p>Stats.canon_var contains the raw and standardized canonical variates for each main effect or interaction. Note that the standardized canonical variate is referred to as a discriminant function in the paper.</p><p>stats.scores contains the projections of the mean-centered data onto the canonical variates.</p><p>SS The different sums-of-squares matrices are saved in stats.SS. stats.ss.hyp contains the between-group matrices corresponding to the different main effects and interactions of interest. For example, stats.ss.hyp(:,:,1) contains the ss matrix of the first main effect.</p><h2>Significance testing via permutation testing<a name="7"></a></h2><p>We permute the raw data. Note that restricted permutations may give more exact results for complicated experimental designs. See e.g. the papers of anderson and ter braak for a thorough discussion on this topic (Anderson, Marti, and Cajo Ter Braak. "Permutation tests for multi-factorial analysis of variance." Journal of statistical computation and simulation 73.2 (2003): 85-113.). 1. - save observed test statistic (here we use Wilks lambda);</p><pre class="codeinput">Wilks = squeeze(stats.tests(1,1)); <span class="comment">% 1st row in stats.test indicates wilks lambda, 1st column specifies that we investigate the first main effect.</span>
+<span class="comment">%</span>
+</pre><p>Run a full permutation test</p><pre class="codeinput">options.extra = 0; <span class="comment">%Only store required output to increase computational speed</span>
+iter = 1000; <span class="comment">%1000 permutations</span>
+[nobj,nvar] = size(X);
+<span class="keyword">for</span> i = 1:iter-1
+    Y_perm = X(randperm(nobj),:);
+    stats_perm = rmanova(Y_perm,options,Label);
+    Wilks_null(i,1) = stats.tests(1,1);
+<span class="keyword">end</span>
+<span class="comment">%</span>
+</pre><p>Compute p-values</p><pre class="codeinput">p_value_full = 1 - (length(find(Wilks &lt;= Wilks_null))+1)/(iter+1); <span class="comment">% Smaller value of Wilks lambda is bigger group difference</span>
+<span class="comment">% p = 9.9900e-4; clearly a significant group difference.</span>
+<span class="comment">% Note smaller values of Wilk's lambda indicate larger differences. For the</span>
+<span class="comment">% other tests this is the other way around and the line should be changed</span>
+<span class="comment">% to p_value_full = 1-length(find(test &gt;= test_null))+1)/iter;</span>
+</pre><h2>Plot results.<a name="10"></a></h2><p>To save canonical variates and scores the model has to be run with options.extra = 1;</p><pre class="codeinput">options.extra = 1;
+options.lambda = [];
+stats = rmanova(X,options,Label);
+<span class="comment">%</span>
+</pre><p>Plot canonical variate to study which variables contributed to the model.</p><pre class="codeinput">figure; stem(stats.canon_var.raw(:,1));
+xlabel(<span class="string">'Variable'</span>); ylabel(<span class="string">'Coefficient'</span>);
+<span class="comment">% Note that stats.canon_var.raw is of form (i,j,k) when  more factors and</span>
+<span class="comment">% interactions are studied. i indicate the variables, j the jth CV for</span>
+<span class="comment">% factor or interaction k (see stats.info.model to determine the label of k).</span>
+figure; stem(stats.canon_var.std(:,1));
+xlabel(<span class="string">'Variable'</span>); ylabel(<span class="string">'Standardized coefficient'</span>);
+<span class="comment">% Note that the minor contribution of the 3rd variable can be detected when</span>
+<span class="comment">% the standardized CV's are inspected. The standardized CV is referred to</span>
+<span class="comment">% as a discriminant function in the paper.</span>
+<span class="comment">%</span>
+</pre><img vspace="5" hspace="5" src="Example_02.png" alt=""> <img vspace="5" hspace="5" src="Example_03.png" alt=""> <p>Plot scores</p><pre class="codeinput">figure; gscatter(stats.scores.std(:,1),stats.scores.std(:,2),stats.info.labels{1});
+xlabel(<span class="string">'CV 1'</span>); ylabel(<span class="string">'CV 2'</span>);
+</pre><img vspace="5" hspace="5" src="Example_04.png" alt=""> <p>Significance of an effect should always be judged in the basis of the permutation test and not the score plot itself. Especially with data with thousands of variables the score-plot can provide an overoptimistic view of the group-separation. In such cases it can be usefull to consider only a subset of the variables (e.g. the top 250 as identified by the CV) when calculating the scores.</p><p>Note that is is meaningful to inspect g-1 CV's and scores where g is the number of levels. In this case that means that inspection of only the first CV should be enough to observe group separation. This is indeed the case. This can also be observed by inspection the eigenvalues corresponding to the test who are a measure of the standardize distance between the groups along the direction of the CV.</p><pre class="codeinput">stats.eigval(1:2,1);
+<span class="comment">% The first eigenvalue is clearly larger than the others.</span>
+</pre><p>Results of ASCA model</p><pre class="codeinput">options.lambda = 1;
+stats_ASCA = rmanova(X,options,Label);
+figure; stem(stats_ASCA.canon_var.std(:,1));
+xlabel(<span class="string">'Variable'</span>); ylabel(<span class="string">'Coefficient'</span>);
+<span class="comment">% Note that variable 1 is not marked as important by the ASCA model.</span>
+<span class="keyword">for</span> i = 1:5
+    [p, table, stats_anova] = anova1(X(:,i),Label,<span class="string">'off'</span>);
+    p_anova(i) = p;
+    F_anova(i) = table{2,5};
+<span class="keyword">end</span>
+figure; stem(sqrt(F_anova)/norm(sqrt(F_anova))); hold <span class="string">on</span>; stem(abs(stats_ASCA.canon_var.std(:,1))/norm(stats_ASCA.canon_var.std(:,1)));
+<span class="comment">% Note that the coefficients of the ASCA model correspond to those of a</span>
+<span class="comment">% t-test</span>
+</pre><img vspace="5" hspace="5" src="Example_05.png" alt=""> <img vspace="5" hspace="5" src="Example_06.png" alt=""> <p class="footer"><br><a href="http://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2014b</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Example script for rMANOVA analysis
+%
+% This example shows how to fit an rMANOVA model, run a permutation test
+% and construct relevant plots.
+%
+% The main idea of rMANOVA is to replace the sample estimate of the
+% within-group covariance matrix by a shrunken version. Different prior
+% structures for the covariance matrix can be specified, namely: 
+% 1. Average variance
+% 2. Unique variance
+
+%% Specify data
+%
+mu1 = zeros(5,1);
+mu2 = zeros(5,1); mu2(2) = 2; mu2(3) = 10;
+Sigma = eye(5); Sigma(3,3) = 200; 
+Sigma(1,2) = 0.9; Sigma(2,1) = Sigma(1,2);
+X1 = mvnrnd(mu1,Sigma,500); X2 = mvnrnd(mu2,Sigma,500);
+X = [X1;X2];
+Label = ones(1000,1); Label(501:end) = 2;
+variable_names = ['X1';'X2';'X3';'X4';'X5'];
+[h,ax,bigax] = gplotmatrix(X,[],Label,'br','o*',5,'off','variable',variable_names,variable_names);
+set(ax,'FontSize',20');
+
+%% Calculate model
+%
+% 1. Add linstats_2006 folder to path
+work_dir = pwd;
+linstats_path = [work_dir,filesep,'linstats_2006'];
+addpath(linstats_path);
+%
+%%
+% 2. Load default rMANOVA options
+options = rmanova('options');
+% Note that options.lambda = empty. This  means that the algorithm itself determines the best amount of
+% shrinkage of the form (lambda*T+(1-lambda)Sigma_w), where T is a prior
+% covariance structure. Note that the MANOVA model is obtained when lambda
+% = 0 (only when the number of samples is smaller than the number of
+% variables). The ASCA model is obtained when lambda = 1.
+%
+%%
+options.target = 'unique_var'; % Options are 'average_var', 'unique_var'
+% Specify shrinkage target. Use one of the two options listed above.
+%
+% The options structure also allows to specify the type of SSQ correction
+% that is used for analysis of unbalanced data (options.sstype). Type III
+% corrections is the default. A specific model that only tests certain main
+% effects and interactions can also be specified in options. (See
+% linstats_2006b toolbox manual for more information.)
+%
+%%
+% 3. fit model
+stats = rmanova(X,options,Label); % Same result as manova1 when lambda = 0;
+%
+% If you want to study the effect of more factors just insert the label
+% vectors consequtively, i.e.
+% rmanova(X,options,[],Factor1_label,Factor2_label).
+
+%% Extra info:  The stats structure contains the output of the model
+%
+% MODEL INFO
+% stats.info can be inspected to lookup the factor names, the levels for
+% each factor, and the actual model that was fit (equation 2 in paper).
+% Stats.labels contains the columns from the designmatrix corresponding to
+% each term in the model description (note that the intercept is ignored).
+%
+% DATA
+% stats.data contains the raw data, the fit by equation 2, and the
+% residuals. Note the fit given by each term of the model (main effect or
+% interaction) is saved seperately. For example stats.data.fit(:,:,1) 
+% contains the estimated mean responses due to the first main effect.
+%
+% stats.dmat contains the designmatrix
+%
+% % stats.shrink contains information of the shrinkage estimate of the
+% within-group sums-of-squares matrix. Note that in this example
+% stats.lambda is close to zero indicating that not much shrinkage was
+% applied. This is expected due to the large number (1000) of training
+% samples in the simulated data set. 
+%
+% stats.tests contains the output of four statistical tests, namely Wilks
+% lambda, Pillais trace, Hotelling-Lawley Trace, and Roy's Max Root. The
+% rows in stats.test correspond to these four test and each column
+% corresponds to a term in the model (main effect or interaction).
+%
+% THE FOLLOWING OUTPUT IS ONLY STORED WHEN OPTIONS.EXTRA = 1
+% 
+% Stats.canon_var contains the raw and standardized canonical variates for
+% each main effect or interaction. Note that the standardized canonical
+% variate is referred to as a discriminant function in the paper.
+%
+% stats.scores contains the projections of the mean-centered data onto the
+% canonical variates.
+%
+% SS 
+% The different sums-of-squares matrices are saved in stats.SS.
+% stats.ss.hyp contains the between-group matrices corresponding to the
+% different main effects and interactions of interest. For example,
+% stats.ss.hyp(:,:,1) contains the ss matrix of the first main effect.
+
+%% Significance testing via permutation testing
+%
+% We permute the raw data. Note that restricted permutations may give more
+% exact results for complicated experimental designs. See e.g. the papers
+% of anderson and ter braak for a thorough discussion on this topic
+% (Anderson, Marti, and Cajo Ter Braak. "Permutation tests for
+% multi-factorial analysis of variance." Journal of statistical computation
+% and simulation 73.2 (2003): 85-113.). 1. - save observed test statistic
+% (here we use Wilks lambda);
+Wilks = squeeze(stats.tests(1,1)); % 1st row in stats.test indicates wilks lambda, 1st column specifies that we investigate the first main effect.
+%
+%%
+% Run a full permutation test
+options.extra = 0; %Only store required output to increase computational speed 
+iter = 1000; %1000 permutations
+[nobj,nvar] = size(X);
+for i = 1:iter-1
+    Y_perm = X(randperm(nobj),:);
+    stats_perm = rmanova(Y_perm,options,Label);
+    Wilks_null(i,1) = stats.tests(1,1);
+end
+%
+%%
+% Compute p-values
+p_value_full = 1 - (length(find(Wilks <= Wilks_null))+1)/(iter+1); % Smaller value of Wilks lambda is bigger group difference
+% p = 9.9900e-4; clearly a significant group difference.
+% Note smaller values of Wilk's lambda indicate larger differences. For the
+% other tests this is the other way around and the line should be changed
+% to p_value_full = 1-length(find(test >= test_null))+1)/iter;
+
+%% Plot results.
+%
+% To save canonical variates and scores the model has to be run with
+% options.extra = 1;
+options.extra = 1;
+options.lambda = [];
+stats = rmanova(X,options,Label); 
+%
+%%
+% Plot canonical variate to study which variables contributed to the model.
+figure; stem(stats.canon_var.raw(:,1));
+xlabel('Variable'); ylabel('Coefficient');
+% Note that stats.canon_var.raw is of form (i,j,k) when  more factors and
+% interactions are studied. i indicate the variables, j the jth CV for
+% factor or interaction k (see stats.info.model to determine the label of k). 
+figure; stem(stats.canon_var.std(:,1));
+xlabel('Variable'); ylabel('Standardized coefficient');
+% Note that the minor contribution of the 3rd variable can be detected when
+% the standardized CV's are inspected. The standardized CV is referred to
+% as a discriminant function in the paper.
+%
+%%
+% Plot scores
+figure; gscatter(stats.scores.std(:,1),stats.scores.std(:,2),stats.info.labels{1});
+xlabel('CV 1'); ylabel('CV 2'); 
+%%
+% Significance of an effect should always be judged in the basis of the
+% permutation test and not the score plot itself. Especially with data with
+% thousands of variables the score-plot can provide an overoptimistic view
+% of the group-separation. In such cases it can be usefull to consider only
+% a subset of the variables (e.g. the top 250 as identified by the CV) when
+% calculating the scores.
+%
+% Note that is is meaningful to inspect g-1 CV's and scores where g is the
+% number of levels. In this case that means that inspection of only the
+% first CV should be enough to observe group separation. This is indeed the
+% case. This can also be observed by inspection the eigenvalues
+% corresponding to the test who are a measure of the standardize distance
+% between the groups along the direction of the CV. 
+%
+stats.eigval(1:2,1);
+% The first eigenvalue is clearly larger than the others.
+%%
+% Results of ASCA model
+options.lambda = 1;
+stats_ASCA = rmanova(X,options,Label); 
+figure; stem(stats_ASCA.canon_var.std(:,1));
+xlabel('Variable'); ylabel('Coefficient');
+% Note that variable 1 is not marked as important by the ASCA model.
+for i = 1:5
+    [p, table, stats_anova] = anova1(X(:,i),Label,'off');
+    p_anova(i) = p;
+    F_anova(i) = table{2,5};
+end
+figure; stem(sqrt(F_anova)/norm(sqrt(F_anova))); hold on; stem(abs(stats_ASCA.canon_var.std(:,1))/norm(stats_ASCA.canon_var.std(:,1)));
+% Note that the coefficients of the ASCA model correspond to those of a
+% t-test
+    
+
+##### SOURCE END #####
+--></body></html>
