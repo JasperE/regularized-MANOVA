@@ -4,6 +4,7 @@ Matlab code for regularized MANOVA
 The folders stored here contain matlab code for regularized MANOVA analysis. Please cite the following paper when using the code:
 
 Engel, J., Blanchet, L., Bloemen, B., van den Heuvel, L. P., Engelke, U. H. F., Wevers, R. A., & Buydens, L. M. C. (2015). Regularized MANOVA (rMANOVA) in untargeted metabolomics. Analytica chimica acta, 899, 1-12.
+
 # Availability and Requirements
 ##### Programming languages (given versions were used for development, other versions may also be compatible):
 * Matlab (R2014b)
