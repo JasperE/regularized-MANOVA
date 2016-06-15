@@ -117,7 +117,7 @@ iter = 1000; %1000 permutations
 for i = 1:iter-1
     Y_perm = X(randperm(nobj),:);
     stats_perm = rmanova(Y_perm,options,Label);
-    Wilks_null(i,1) = stats.tests(1,1);
+    Wilks_null(i,1) = stats_perm.tests(1,1);
 end
 %
 %%
